@@ -1,0 +1,152 @@
+{% extends 'stall/base.html' %}
+
+{% block title %}{{ book.title }} - Library Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            {% if book.cover_image %}
+                <img src="{{ book.cover_image.url }}" class="card-img-top" alt="{{ book.title }}" style="height: 400px; object-fit: cover;">
+            {% else %}
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 400px;">
+                    <i class="fas fa-book fa-4x text-muted"></i>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3>{{ book.title }}</h3>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Author(s):</strong></div>
+                    <div class="col-sm-9">{{ book.author_names }}</div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Category:</strong></div>
+                    <div class="col-sm-9">{{ book.category.name }}</div>
+                </div>
+                
+                {% if book.publisher %}
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Publisher:</strong></div>
+                    <div class="col-sm-9">{{ book.publisher.name }}</div>
+                </div>
+                {% endif %}
+                
+                {% if book.isbn %}
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>ISBN:</strong></div>
+                    <div class="col-sm-9">{{ book.isbn }}</div>
+                </div>
+                {% endif %}
+                
+                {% if book.publication_date %}
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Publication Date:</strong></div>
+                    <div class="col-sm-9">{{ book.publication_date }}</div>
+                </div>
+                {% endif %}
+                
+                {% if book.pages %}
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Pages:</strong></div>
+                    <div class="col-sm-9">{{ book.pages }}</div>
+                </div>
+                {% endif %}
+                
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Language:</strong></div>
+                    <div class="col-sm-9">{{ book.get_language_display }}</div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Availability:</strong></div>
+                    <div class="col-sm-9">
+                        <span class="badge {% if book.is_available %}bg-success{% else %}bg-danger{% endif %}">
+                            {% if book.is_available %}Available{% else %}Not Available{% endif %}
+                        </span>
+                        <small class="text-muted">({{ available_count }} of {{ total_copies }} copies available)</small>
+                    </div>
+                </div>
+                
+                {% if book.price %}
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Price:</strong></div>
+                    <div class="col-sm-9">BDT {{ book.price }}</div>
+                </div>
+                {% endif %}
+                
+                {% if book.description %}
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Description:</strong></div>
+                    <div class="col-sm-9">{{ book.description|linebreaks }}</div>
+                </div>
+                {% endif %}
+                
+                <div class="mt-4">
+                    <a href="{% url 'home' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Catalog
+                    </a>
+                    {% if book.is_available %}
+                        <a href="{% url 'borrow_book' %}" class="btn btn-primary">
+                            <i class="fas fa-book-open"></i> Borrow This Book
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if available_copies %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Available Copies</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Copy Number</th>
+                                <th>Condition</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for copy in available_copies %}
+                                <tr>
+                                    <td>{{ copy.copy_number }}</td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if copy.condition == 'new' %}bg-success
+                                            {% elif copy.condition == 'good' %}bg-primary
+                                            {% elif copy.condition == 'fair' %}bg-warning
+                                            {% else %}bg-danger{% endif %}">
+                                            {{ copy.get_condition_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ copy.location_shelf|default:"-" }}</td>
+                                    <td>
+                                        <span class="badge bg-success">Available</span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

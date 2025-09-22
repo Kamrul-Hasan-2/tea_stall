@@ -1,0 +1,196 @@
+{% extends 'stall/base.html' %}
+
+{% block title %}Dashboard - Library Management{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="fas fa-tachometer-alt"></i> Library Dashboard</h2>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ today_borrowings_count }}</h4>
+                        <p class="mb-0">Today's Borrowings</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-book-open fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ today_returns_count }}</h4>
+                        <p class="mb-0">Today's Returns</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-undo fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ total_books }}</h4>
+                        <p class="mb-0">Total Books</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-book fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ overdue_books }}</h4>
+                        <p class="mb-0">Overdue Books</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Statistics -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card text-white bg-secondary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ total_members }}</h4>
+                        <p class="mb-0">Active Members</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card text-white bg-dark">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ active_borrowings }}</h4>
+                        <p class="mb-0">Currently Borrowed</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-hand-holding fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Borrowings -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-clock"></i> Recent Borrowings</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_borrowings %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Book</th>
+                                    <th>Member</th>
+                                    <th>Borrow Date</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for borrow in recent_borrowings %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ borrow.book.title }}</strong><br>
+                                            <small class="text-muted">{{ borrow.book.author_names }}</small>
+                                        </td>
+                                        <td>{{ borrow.member.full_name }}</td>
+                                        <td>{{ borrow.borrow_date|date:"M d, Y" }}</td>
+                                        <td>{{ borrow.due_date|date:"M d, Y" }}</td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if borrow.status == 'borrowed' %}bg-primary
+                                                {% elif borrow.status == 'returned' %}bg-success
+                                                {% elif borrow.status == 'overdue' %}bg-danger
+                                                {% else %}bg-warning{% endif %}">
+                                                {{ borrow.get_status_display }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No recent borrowings found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Popular Books -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5><i class="fas fa-star"></i> Popular Books</h5>
+            </div>
+            <div class="card-body">
+                {% if popular_books %}
+                    {% for book in popular_books %}
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0">
+                                {% if book.cover_image %}
+                                    <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" style="width: 40px; height: 40px; object-fit: cover;" class="rounded">
+                                {% else %}
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                        <i class="fas fa-book text-muted"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">{{ book.title|truncatechars:30 }}</h6>
+                                <small class="text-muted">{{ book.author_names|truncatechars:25 }}</small>
+                                <div>
+                                    <span class="badge bg-primary">{{ book.borrow_count }} borrows</span>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-success"><i class="fas fa-info-circle"></i> No borrowing data yet!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

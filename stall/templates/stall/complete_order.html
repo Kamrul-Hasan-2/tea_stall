@@ -1,0 +1,86 @@
+{% extends 'stall/base.html' %}
+
+{% block title %}Complete Order #{{ order.id }} - Tea Stall Management{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-check"></i> Complete Order #{{ order.id }}</h4>
+            </div>
+            <div class="card-body">
+                <!-- Order Summary -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6>Customer Information:</h6>
+                        <p>
+                            <strong>{{ order.customer.name }}</strong><br>
+                            {{ order.customer.phone }}<br>
+                            {% if order.customer.email %}{{ order.customer.email }}<br>{% endif %}
+                            {% if order.customer.address %}{{ order.customer.address }}{% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Order Information:</h6>
+                        <p>
+                            <strong>Order Date:</strong> {{ order.order_date|date:"M d, Y H:i" }}<br>
+                            <strong>Status:</strong> 
+                            <span class="badge bg-warning text-dark">{{ order.get_status_display }}</span><br>
+                            <strong>Total Amount:</strong> ₹{{ order.total_amount }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Order Items -->
+                <h6>Order Items:</h6>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order.items.all %}
+                                <tr>
+                                    <td>{{ item.tea_item.name }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>₹{{ item.price }}</td>
+                                    <td>₹{{ item.get_total_price }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-active">
+                                <th colspan="3" class="text-end">Total:</th>
+                                <th>₹{{ order.total_amount }}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>Note:</strong> Completing this order will mark it as finished and update the inventory stock levels.
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'add_items_to_order' order.id %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Edit
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check"></i> Complete Order
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

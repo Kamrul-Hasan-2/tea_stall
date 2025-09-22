@@ -1,0 +1,215 @@
+{% extends 'stall/base.html' %}
+
+{% block title %}Chat Assistant - Library Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4><i class="fas fa-robot"></i> Library Chat Assistant</h4>
+                <p class="mb-0">Ask me anything about the library, books, or services!</p>
+            </div>
+            <div class="card-body" style="height: 500px; overflow-y: auto;" id="chatMessages">
+                <div class="message bot-message mb-3">
+                    <div class="d-flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-robot fa-2x text-primary"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="bg-light p-3 rounded">
+                                <p class="mb-0">Hello! I'm your library assistant. I can help you find books, answer questions about library services, and provide information about our collection. How can I assist you today?</p>
+                            </div>
+                            <small class="text-muted">Just now</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <form id="chatForm">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="messageInput" placeholder="Type your message..." maxlength="500">
+                        <button class="btn btn-primary" type="submit" id="sendButton">
+                            <i class="fas fa-paper-plane"></i> Send
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Quick Response Buttons -->
+                <div class="mt-3">
+                    <small class="text-muted">Quick questions:</small>
+                    <div class="mt-2">
+                        {% for response in quick_responses %}
+                            <button class="btn btn-outline-secondary btn-sm me-2 mb-2 quick-btn" data-message="{{ response }}">
+                                {{ response }}
+                            </button>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Chat Button -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
+    <button class="btn btn-primary rounded-pill" id="floatingChatBtn" data-bs-toggle="tooltip" title="Clear Chat">
+        <i class="fas fa-trash"></i>
+    </button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatForm = document.getElementById('chatForm');
+    const messageInput = document.getElementById('messageInput');
+    const chatMessages = document.getElementById('chatMessages');
+    const sendButton = document.getElementById('sendButton');
+    const quickButtons = document.querySelectorAll('.quick-btn');
+    const floatingChatBtn = document.getElementById('floatingChatBtn');
+
+    // Handle form submission
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const message = messageInput.value.trim();
+        if (message) {
+            sendMessage(message);
+            messageInput.value = '';
+        }
+    });
+
+    // Handle quick response buttons
+    quickButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const message = this.getAttribute('data-message');
+            sendMessage(message);
+        });
+    });
+
+    // Clear chat functionality
+    floatingChatBtn.addEventListener('click', function() {
+        if (confirm('Are you sure you want to clear the chat?')) {
+            clearChat();
+        }
+    });
+
+    function sendMessage(message) {
+        // Disable send button
+        sendButton.disabled = true;
+        sendButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+        // Add user message to chat
+        addMessage(message, 'user');
+
+        // Send to API
+        fetch('{% url "chatbot_api" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: JSON.stringify({
+                message: message
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                addMessage(data.response, 'bot');
+            } else {
+                addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            addMessage('Sorry, I\'m having trouble connecting right now. Please try again later.', 'bot');
+        })
+        .finally(() => {
+            // Re-enable send button
+            sendButton.disabled = false;
+            sendButton.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+        });
+    }
+
+    function addMessage(message, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}-message mb-3`;
+        
+        const now = new Date();
+        const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        if (sender === 'user') {
+            messageDiv.innerHTML = `
+                <div class="d-flex flex-row-reverse">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-user fa-2x text-success"></i>
+                    </div>
+                    <div class="flex-grow-1 me-3">
+                        <div class="bg-primary text-white p-3 rounded">
+                            <p class="mb-0">${escapeHtml(message)}</p>
+                        </div>
+                        <small class="text-muted float-end">${timeString}</small>
+                    </div>
+                </div>
+            `;
+        } else {
+            messageDiv.innerHTML = `
+                <div class="d-flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-robot fa-2x text-primary"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="bg-light p-3 rounded">
+                            <p class="mb-0">${formatBotMessage(message)}</p>
+                        </div>
+                        <small class="text-muted">${timeString}</small>
+                    </div>
+                </div>
+            `;
+        }
+        
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function formatBotMessage(message) {
+        // Convert newlines to <br> and preserve basic formatting
+        return escapeHtml(message)
+            .replace(/\n/g, '<br>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>');
+    }
+
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+
+    function clearChat() {
+        // Keep only the initial bot message
+        const messages = chatMessages.querySelectorAll('.message');
+        for (let i = 1; i < messages.length; i++) {
+            messages[i].remove();
+        }
+    }
+
+    // Focus on input when page loads
+    messageInput.focus();
+
+    // Auto-resize input
+    messageInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            chatForm.dispatchEvent(new Event('submit'));
+        }
+    });
+});
+</script>
+{% endblock %}

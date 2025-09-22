@@ -1,0 +1,155 @@
+{% extends 'stall/base.html' %}
+
+{% block title %}Return Book - Library Management{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-undo"></i> Return Book</h4>
+            </div>
+            <div class="card-body">
+                <!-- Book and Member Information -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6><i class="fas fa-book"></i> Book Information</h6>
+                                <hr>
+                                <div class="mb-2">
+                                    <strong>Title:</strong> {{ borrow_record.book.title }}
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Author(s):</strong> {{ borrow_record.book.author_names }}
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Category:</strong> {{ borrow_record.book.category.name }}
+                                </div>
+                                {% if borrow_record.book.isbn %}
+                                    <div class="mb-2">
+                                        <strong>ISBN:</strong> {{ borrow_record.book.isbn }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6><i class="fas fa-user"></i> Member Information</h6>
+                                <hr>
+                                <div class="mb-2">
+                                    <strong>Name:</strong> {{ borrow_record.member.full_name }}
+                                </div>
+                                <div class="mb-2">
+                                    <strong>ID:</strong> {{ borrow_record.member.membership_id }}
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Email:</strong> {{ borrow_record.member.email }}
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Phone:</strong> {{ borrow_record.member.phone }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Borrowing Details -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h6><i class="fas fa-info-circle"></i> Borrowing Details</h6>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-2">
+                                    <strong>Borrow Date:</strong><br>
+                                    {{ borrow_record.borrow_date|date:"M d, Y" }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-2">
+                                    <strong>Due Date:</strong><br>
+                                    <span class="{% if borrow_record.is_overdue %}text-danger{% endif %}">
+                                        {{ borrow_record.due_date|date:"M d, Y" }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-2">
+                                    <strong>Status:</strong><br>
+                                    <span class="badge 
+                                        {% if borrow_record.status == 'borrowed' %}bg-warning text-dark
+                                        {% elif borrow_record.status == 'overdue' %}bg-danger
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ borrow_record.get_status_display }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if borrow_record.is_overdue %}
+                            <div class="alert alert-warning mt-3">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Overdue Notice:</strong> This book is {{ borrow_record.days_overdue }} day(s) overdue.
+                                {% if borrow_record.fine_amount %}
+                                    A fine of BDT {{ borrow_record.fine_amount }} has been calculated.
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Return Form -->
+                <div class="card">
+                    <div class="card-body">
+                        <h6><i class="fas fa-check"></i> Confirm Return</h6>
+                        <hr>
+                        
+                        <form method="POST">
+                            {% csrf_token %}
+                            
+                            <div class="mb-3">
+                                <label for="condition" class="form-label">Book Condition</label>
+                                <select name="condition" id="condition" class="form-select" required>
+                                    <option value="">Select condition...</option>
+                                    <option value="excellent">Excellent</option>
+                                    <option value="good">Good</option>
+                                    <option value="fair">Fair</option>
+                                    <option value="poor">Poor</option>
+                                    <option value="damaged">Damaged</option>
+                                </select>
+                                <div class="form-text">Please assess the current condition of the book.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="notes" class="form-label">Return Notes (Optional)</label>
+                                <textarea name="notes" id="notes" class="form-control" rows="3" placeholder="Any additional notes about the return..."></textarea>
+                            </div>
+
+                            {% if borrow_record.fine_amount %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                    <strong>Fine Amount:</strong> BDT {{ borrow_record.fine_amount }}
+                                    <br>
+                                    <small>This fine will be recorded against the member's account.</small>
+                                </div>
+                            {% endif %}
+
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'borrowing_list' %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back to Borrowings
+                                </a>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-check"></i> Confirm Return
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

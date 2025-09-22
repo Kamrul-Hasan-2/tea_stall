@@ -1,0 +1,178 @@
+{% extends 'stall/base.html' %}
+
+{% block title %}Order #{{ order.id }} - Tea Stall Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-receipt"></i> Order #{{ order.id }} Details</h4>
+            </div>
+            <div class="card-body">
+                <!-- Customer Information -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-user"></i> Customer Information</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Name:</strong></td>
+                                <td>{{ order.customer.name }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Phone:</strong></td>
+                                <td>{{ order.customer.phone }}</td>
+                            </tr>
+                            {% if order.customer.email %}
+                            <tr>
+                                <td><strong>Email:</strong></td>
+                                <td>{{ order.customer.email }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if order.customer.address %}
+                            <tr>
+                                <td><strong>Address:</strong></td>
+                                <td>{{ order.customer.address }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-info-circle"></i> Order Information</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td>
+                                    <span class="badge 
+                                        {% if order.status == 'pending' %}bg-warning text-dark
+                                        {% elif order.status == 'preparing' %}bg-info
+                                        {% elif order.status == 'ready' %}bg-primary
+                                        {% elif order.status == 'completed' %}bg-success
+                                        {% else %}bg-danger{% endif %}">
+                                        {{ order.get_status_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Order Date:</strong></td>
+                                <td>{{ order.order_date|date:"M d, Y H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Last Updated:</strong></td>
+                                <td>{{ order.updated_at|date:"M d, Y H:i" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Order Items -->
+                <h6><i class="fas fa-coffee"></i> Order Items</h6>
+                {% if order.items.all %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Category</th>
+                                    <th>Quantity</th>
+                                    <th>Unit Price</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order.items.all %}
+                                    <tr>
+                                        <td>{{ item.tea_item.name }}</td>
+                                        <td>{{ item.tea_item.category.name }}</td>
+                                        <td>{{ item.quantity }}</td>
+                                        <td>₹{{ item.price }}</td>
+                                        <td><strong>₹{{ item.get_total_price }}</strong></td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-active">
+                                    <th colspan="4" class="text-end">Total Amount:</th>
+                                    <th>₹{{ order.total_amount }}</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> No items in this order.
+                    </div>
+                {% endif %}
+
+                <!-- Notes -->
+                {% if order.notes %}
+                    <div class="mt-4">
+                        <h6><i class="fas fa-sticky-note"></i> Notes</h6>
+                        <div class="alert alert-info">
+                            {{ order.notes }}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-cogs"></i> Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if order.status != 'completed' and order.status != 'cancelled' %}
+                        <a href="{% url 'add_items_to_order' order.id %}" class="btn btn-primary">
+                            <i class="fas fa-edit"></i> Edit Order
+                        </a>
+                        <a href="{% url 'complete_order' order.id %}" class="btn btn-success">
+                            <i class="fas fa-check"></i> Complete Order
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'order_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-list"></i> Back to Orders
+                    </a>
+                    <button onclick="window.print()" class="btn btn-outline-primary">
+                        <i class="fas fa-print"></i> Print Order
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-chart-pie"></i> Order Summary</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h4 class="text-primary">{{ order.items.count }}</h4>
+                            <small class="text-muted">Items</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success">₹{{ order.total_amount }}</h4>
+                        <small class="text-muted">Total</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .btn, .card-header, nav, .col-md-4 {
+        display: none !important;
+    }
+    .col-md-8 {
+        width: 100% !important;
+    }
+}
+</style>
+{% endblock %}

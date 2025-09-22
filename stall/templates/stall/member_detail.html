@@ -1,0 +1,232 @@
+{% extends 'stall/base.html' %}
+
+{% block title %}{{ member.full_name }} - Member Details{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <!-- Member Profile Card -->
+        <div class="card">
+            <div class="card-body text-center">
+                {% if member.photo %}
+                    <img src="{{ member.photo.url }}" class="rounded-circle mb-3" width="120" height="120" alt="{{ member.full_name }}">
+                {% else %}
+                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 120px; height: 120px;">
+                        <i class="fas fa-user fa-3x text-muted"></i>
+                    </div>
+                {% endif %}
+                
+                <h4>{{ member.full_name }}</h4>
+                <p class="text-muted">{{ member.membership_id }}</p>
+                
+                <span class="badge {% if member.is_active %}bg-success{% else %}bg-danger{% endif %} mb-3">
+                    {% if member.is_active %}Active{% else %}Inactive{% endif %}
+                </span>
+                
+                <div class="text-start">
+                    <div class="mb-2">
+                        <i class="fas fa-envelope text-muted me-2"></i>
+                        {{ member.email }}
+                    </div>
+                    <div class="mb-2">
+                        <i class="fas fa-phone text-muted me-2"></i>
+                        {{ member.phone }}
+                    </div>
+                    <div class="mb-2">
+                        <i class="fas fa-user-tag text-muted me-2"></i>
+                        {{ member.get_membership_type_display }}
+                    </div>
+                    <div class="mb-2">
+                        <i class="fas fa-calendar text-muted me-2"></i>
+                        Joined {{ member.date_joined|date:"M d, Y" }}
+                    </div>
+                    <div class="mb-2">
+                        <i class="fas fa-map-marker-alt text-muted me-2"></i>
+                        {{ member.address|truncatewords:10 }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-tools"></i> Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <a href="{% url 'select_books_to_borrow' member.id %}" class="btn btn-primary btn-sm d-block mb-2">
+                    <i class="fas fa-plus"></i> Borrow Books
+                </a>
+                <a href="{% url 'borrowing_list' %}?member={{ member.id }}" class="btn btn-info btn-sm d-block mb-2">
+                    <i class="fas fa-list"></i> View All Borrowings
+                </a>
+                <a href="{% url 'members_list' %}" class="btn btn-secondary btn-sm d-block">
+                    <i class="fas fa-arrow-left"></i> Back to Members
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h4 class="text-primary">{{ borrowing_stats.total_borrowed }}</h4>
+                        <p class="card-text text-muted small">Total Borrowed</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h4 class="text-warning">{{ borrowing_stats.currently_borrowed }}</h4>
+                        <p class="card-text text-muted small">Currently Borrowed</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h4 class="text-danger">{{ borrowing_stats.overdue_count }}</h4>
+                        <p class="card-text text-muted small">Overdue Books</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h4 class="text-success">{{ borrowing_stats.total_fines|floatformat:2 }}</h4>
+                        <p class="card-text text-muted small">Total Fines (BDT)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Borrowings -->
+        {% if current_borrowings %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-book-reader"></i> Current Borrowings</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Book</th>
+                                    <th>Borrow Date</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for borrowing in current_borrowings %}
+                                    <tr class="{% if borrowing.is_overdue %}table-warning{% endif %}">
+                                        <td>
+                                            <strong>{{ borrowing.book.title }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ borrowing.book.author_names }}</small>
+                                        </td>
+                                        <td>{{ borrowing.borrow_date|date:"M d, Y" }}</td>
+                                        <td>
+                                            {{ borrowing.due_date|date:"M d, Y" }}
+                                            {% if borrowing.is_overdue %}
+                                                <br><small class="text-danger">{{ borrowing.days_overdue }} days overdue</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if borrowing.is_overdue %}bg-danger
+                                                {% else %}bg-warning text-dark{% endif %}">
+                                                {% if borrowing.is_overdue %}Overdue{% else %}Borrowed{% endif %}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'return_book' borrowing.id %}" class="btn btn-sm btn-outline-success">
+                                                <i class="fas fa-undo"></i> Return
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Borrowing History -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-history"></i> Borrowing History</h5>
+            </div>
+            <div class="card-body">
+                {% if borrowing_history %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Book</th>
+                                    <th>Borrow Date</th>
+                                    <th>Due Date</th>
+                                    <th>Return Date</th>
+                                    <th>Status</th>
+                                    <th>Fine</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for borrowing in borrowing_history %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ borrowing.book.title }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ borrowing.book.author_names }}</small>
+                                        </td>
+                                        <td>{{ borrowing.borrow_date|date:"M d, Y" }}</td>
+                                        <td>{{ borrowing.due_date|date:"M d, Y" }}</td>
+                                        <td>
+                                            {% if borrowing.return_date %}
+                                                {{ borrowing.return_date|date:"M d, Y" }}
+                                            {% else %}
+                                                <span class="text-muted">Not returned</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if borrowing.status == 'borrowed' %}bg-warning text-dark
+                                                {% elif borrowing.status == 'returned' %}bg-success
+                                                {% elif borrowing.status == 'overdue' %}bg-danger
+                                                {% else %}bg-secondary{% endif %}">
+                                                {{ borrowing.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if borrowing.fine_amount %}
+                                                <span class="text-danger">BDT {{ borrowing.fine_amount }}</span>
+                                            {% else %}
+                                                <span class="text-muted">No fine</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-book fa-2x text-muted mb-3"></i>
+                        <h6 class="text-muted">No borrowing history found</h6>
+                        <p class="text-muted">This member hasn't borrowed any books yet.</p>
+                        <a href="{% url 'select_books_to_borrow' member.id %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i> Borrow First Book
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

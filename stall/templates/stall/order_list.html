@@ -1,0 +1,101 @@
+{% extends 'stall/base.html' %}
+
+{% block title %}Orders - Tea Stall Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-list"></i> Orders</h2>
+    <a href="{% url 'create_order' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> New Order
+    </a>
+</div>
+
+<!-- Filter -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Filter by Status:</label>
+                <select name="status" class="form-select">
+                    <option value="">All Status</option>
+                    {% for status_code, status_display in status_choices %}
+                        <option value="{{ status_code }}" {% if selected_status == status_code %}selected{% endif %}>
+                            {{ status_display }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-secondary">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Orders Table -->
+<div class="card">
+    <div class="card-body">
+        {% if orders %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Order #</th>
+                            <th>Customer</th>
+                            <th>Phone</th>
+                            <th>Status</th>
+                            <th>Total Amount</th>
+                            <th>Order Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                            <tr>
+                                <td><strong>#{{ order.id }}</strong></td>
+                                <td>{{ order.customer.name }}</td>
+                                <td>{{ order.customer.phone }}</td>
+                                <td>
+                                    <span class="badge status-badge
+                                        {% if order.status == 'pending' %}bg-warning text-dark
+                                        {% elif order.status == 'preparing' %}bg-info
+                                        {% elif order.status == 'ready' %}bg-primary
+                                        {% elif order.status == 'completed' %}bg-success
+                                        {% else %}bg-danger{% endif %}">
+                                        {{ order.get_status_display }}
+                                    </span>
+                                </td>
+                                <td><strong>₹{{ order.total_amount }}</strong></td>
+                                <td>{{ order.order_date|date:"M d, Y H:i" }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'order_detail' order.id %}" class="btn btn-outline-primary" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if order.status != 'completed' and order.status != 'cancelled' %}
+                                            <a href="{% url 'add_items_to_order' order.id %}" class="btn btn-outline-secondary" title="Edit Order">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">No orders found</h4>
+                <p class="text-muted">Get started by creating your first order!</p>
+                <a href="{% url 'create_order' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Create First Order
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

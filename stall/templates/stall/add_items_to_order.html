@@ -1,0 +1,94 @@
+{% extends 'stall/base.html' %}
+
+{% block title %}Add Items to Order - Tea Stall Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-coffee"></i> Available Tea Items</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for item in tea_items %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ item.name }}</h6>
+                                    <p class="text-muted small">{{ item.category.name }}</p>
+                                    <p class="text-primary">₹{{ item.price }}</p>
+                                    <form method="post" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="tea_item_id" value="{{ item.id }}">
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" name="quantity" class="form-control" value="1" min="1" max="10">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-plus"></i> Add
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-shopping-cart"></i> Order #{{ order.id }}</h4>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Customer:</strong> {{ order.customer.name }}<br>
+                    <strong>Phone:</strong> {{ order.customer.phone }}
+                </div>
+
+                {% if order_items %}
+                    <h6>Order Items:</h6>
+                    <div class="list-group list-group-flush">
+                        {% for item in order_items %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <div>
+                                    <div class="fw-bold">{{ item.tea_item.name }}</div>
+                                    <small class="text-muted">{{ item.quantity }}x ₹{{ item.price }}</small>
+                                </div>
+                                <div>
+                                    <span class="fw-bold">₹{{ item.get_total_price }}</span>
+                                    <form method="post" action="{% url 'remove_order_item' order.id item.id %}" class="d-inline ms-2">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this item?')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <strong>Total: ₹{{ order.total_amount }}</strong>
+                    </div>
+                    <div class="d-grid gap-2 mt-3">
+                        <a href="{% url 'complete_order' order.id %}" class="btn btn-success">
+                            <i class="fas fa-check"></i> Complete Order
+                        </a>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No items added yet. Start by adding some tea items!</p>
+                {% endif %}
+
+                <div class="d-grid gap-2 mt-3">
+                    <a href="{% url 'order_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-list"></i> View All Orders
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
